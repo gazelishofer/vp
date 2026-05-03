@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ninja)",
+      "Bash(g++ -std=c++14 -o /tmp/testmenu_check TestMenu/main.cpp Models/Employee/Employee.cpp Models/Product/Product.cpp Models/Supplier/Supplier.cpp TestMenu/menu/CMenu.cpp TestMenu/menu/CMenuItem.cpp)",
+      "Bash(g++ -std=c++14 -o /tmp/testmenu TestMenu/main.cpp Models/Employee/Employee.cpp Models/Product/Product.cpp Models/Supplier/Supplier.cpp TestMenu/menu/CMenu.cpp TestMenu/menu/CMenuItem.cpp)",
+      "Bash(/tmp/testmenu)",
+      "Bash(kill %1)",
+      "Bash(pkill -f /tmp/testmenu)"
+    ]
+  }
+}
