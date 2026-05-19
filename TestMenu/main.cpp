@@ -1,24 +1,24 @@
 #include "../Models/Employee/Employee.h"
 #include "../Models/Product/Product.h"
 #include "../Models/Supplier/Supplier.h"
+#include "MyVector/MyVector.h"
 #include "menu/CMenu.h"
 #include "menu/CMenuItem.h"
 #include <iostream>
 #include <string>
-#include <vector>
 
 using namespace std;
 using namespace XXX;
 
-vector<Product> products;
-vector<Supplier> suppliers;
-vector<Employee> employees;
+MyVector<Product> products;
+MyVector<Supplier> suppliers;
+MyVector<Employee> employees;
 
-void showProducts(vector<Product> &products);
-void showSuppliers(vector<Supplier> &suppliers);
-void showEmployees(vector<Employee> &employees);
-void showAllUsersPolymorphically(vector<Employee> &employees,
-                                 vector<Supplier> &suppliers);
+void showProducts(MyVector<Product> &products);
+void showSuppliers(MyVector<Supplier> &suppliers);
+void showEmployees(MyVector<Employee> &employees);
+void showAllUsersPolymorphically(MyVector<Employee> &employees,
+                                 MyVector<Supplier> &suppliers);
 
 int handleAddMenu();
 int handleEditMenu();
@@ -26,8 +26,10 @@ int handleDeleteMenu();
 int handleShowMenu();
 int handleMergeProducts();
 int handleRestockSupplier();
-int handleLogout();
-int handleExit();
+int handleAdminLogout();
+int handleAdminExit();
+int handleUserLogout();
+int handleUserExit();
 
 int handleAddProduct();
 int handleAddSupplier();
@@ -48,9 +50,21 @@ int handleShowAllUsers();
 
 int handleUserShow();
 
-int main() {
-  products.reserve(1000);
+int handleSortMenu();
+int handleFilterMenu();
 
+int handleSortProductsAsc();
+int handleSortProductsDesc();
+int handleSortSuppliersAsc();
+int handleSortSuppliersDesc();
+int handleSortEmployeesAsc();
+int handleSortEmployeesDesc();
+
+int handleFilterProductsByType();
+int handleFilterSuppliersByProductName();
+int handleFilterEmployeesByJob();
+
+int main() {
   while (true) {
     CMenuItem authItems[] = {
         CMenuItem("Login as admin", []() -> int { return 1; }),
@@ -102,20 +116,22 @@ int main() {
             CMenuItem("Merge products (operator+)", handleMergeProducts),
             CMenuItem("Restock via supplier (operator+)",
                       handleRestockSupplier),
-            CMenuItem("Logout", handleLogout),
-            CMenuItem("Exit", handleExit)};
-        CMenu adminMenu("===== ADMIN MENU =====", adminItems, 8);
+            CMenuItem("Sort", handleSortMenu),
+            CMenuItem("Filter", handleFilterMenu),
+            CMenuItem("Logout", handleAdminLogout),
+            CMenuItem("Exit", handleAdminExit)};
+        CMenu adminMenu("===== ADMIN MENU =====", adminItems, 10);
 
         int choice = adminMenu.runCommand();
 
-        if (choice == 7)
+        if (choice == 9)
           loggedIn = false;
-        else if (choice == 8)
+        else if (choice == 10)
           return 0;
       } else {
         CMenuItem userItems[] = {CMenuItem("Show", handleUserShow),
-                                 CMenuItem("Logout", handleLogout),
-                                 CMenuItem("Exit", handleExit)};
+                                 CMenuItem("Logout", handleUserLogout),
+                                 CMenuItem("Exit", handleUserExit)};
         CMenu userMenu("===== USER MENU =====", userItems, 3);
 
         int choice = userMenu.runCommand();
@@ -135,7 +151,7 @@ int handleAddMenu() {
                           CMenuItem("Employee", handleAddEmployee)};
   CMenu addMenu("Add", addItems, 3);
   addMenu.runCommand();
-  return 0;
+  return 1;
 }
 
 int handleEditMenu() {
@@ -144,7 +160,7 @@ int handleEditMenu() {
                            CMenuItem("Employee", handleEditEmployee)};
   CMenu editMenu("Edit", editItems, 3);
   editMenu.runCommand();
-  return 0;
+  return 2;
 }
 
 int handleDeleteMenu() {
@@ -153,7 +169,7 @@ int handleDeleteMenu() {
                              CMenuItem("Employee", handleDeleteEmployee)};
   CMenu deleteMenu("Delete", deleteItems, 3);
   deleteMenu.runCommand();
-  return 0;
+  return 3;
 }
 
 int handleShowMenu() {
@@ -164,7 +180,186 @@ int handleShowMenu() {
       CMenuItem("All users polymorphically", handleShowAllUsers)};
   CMenu showMenu("Show", showItems, 4);
   showMenu.runCommand();
-  return 0;
+  return 4;
+}
+
+int handleSortMenu() {
+  CMenuItem sortItems[] = {
+      CMenuItem("Products by price (ascending)", handleSortProductsAsc),
+      CMenuItem("Products by price (descending)", handleSortProductsDesc),
+      CMenuItem("Suppliers by product name (A-Z)", handleSortSuppliersAsc),
+      CMenuItem("Suppliers by product name (Z-A)", handleSortSuppliersDesc),
+      CMenuItem("Employees by age (ascending)", handleSortEmployeesAsc),
+      CMenuItem("Employees by age (descending)", handleSortEmployeesDesc)};
+  CMenu sortMenu("===== SORT MENU =====", sortItems, 6);
+  sortMenu.runCommand();
+  return 7;
+}
+
+int handleFilterMenu() {
+  CMenuItem filterItems[] = {
+      CMenuItem("Filter products by type", handleFilterProductsByType),
+      CMenuItem("Filter suppliers by product name",
+                handleFilterSuppliersByProductName),
+      CMenuItem("Filter employees by job", handleFilterEmployeesByJob)};
+  CMenu filterMenu("===== FILTER MENU =====", filterItems, 3);
+  filterMenu.runCommand();
+  return 8;
+}
+
+int handleSortProductsAsc() {
+  if (products.empty()) {
+    cout << "No products to sort\n";
+    return 1;
+  }
+  products.sort([](const Product &a,
+                   const Product &b) { return a.getPrice() < b.getPrice(); },
+                true);
+  cout << "Products sorted by price (ascending):\n";
+  showProducts(products);
+  return 1;
+}
+
+int handleSortProductsDesc() {
+  if (products.empty()) {
+    cout << "No products to sort\n";
+    return 2;
+  }
+  products.sort([](const Product &a,
+                   const Product &b) { return a.getPrice() < b.getPrice(); },
+                false);
+  cout << "Products sorted by price (descending):\n";
+  showProducts(products);
+  return 2;
+}
+
+int handleSortSuppliersAsc() {
+  if (suppliers.empty()) {
+    cout << "No suppliers to sort\n";
+    return 3;
+  }
+  suppliers.sort(
+      [](const Supplier &a, const Supplier &b) {
+        string nameA = a.getProduct() ? a.getProduct()->getName() : "";
+        string nameB = b.getProduct() ? b.getProduct()->getName() : "";
+        return nameA < nameB;
+      },
+      true);
+  cout << "Suppliers sorted by product name (A-Z):\n";
+  showSuppliers(suppliers);
+  return 3;
+}
+
+int handleSortSuppliersDesc() {
+  if (suppliers.empty()) {
+    cout << "No suppliers to sort\n";
+    return 4;
+  }
+  suppliers.sort(
+      [](const Supplier &a, const Supplier &b) {
+        string nameA = a.getProduct() ? a.getProduct()->getName() : "";
+        string nameB = b.getProduct() ? b.getProduct()->getName() : "";
+        return nameA < nameB;
+      },
+      false);
+  cout << "Suppliers sorted by product name (Z-A):\n";
+  showSuppliers(suppliers);
+  return 4;
+}
+
+int handleSortEmployeesAsc() {
+  if (employees.empty()) {
+    cout << "No employees to sort\n";
+    return 5;
+  }
+  employees.sort([](const Employee &a,
+                    const Employee &b) { return a.getAge() < b.getAge(); },
+                 true);
+  cout << "Employees sorted by age (ascending):\n";
+  showEmployees(employees);
+  return 5;
+}
+
+int handleSortEmployeesDesc() {
+  if (employees.empty()) {
+    cout << "No employees to sort\n";
+    return 6;
+  }
+  employees.sort([](const Employee &a,
+                    const Employee &b) { return a.getAge() < b.getAge(); },
+                 false);
+  cout << "Employees sorted by age (descending):\n";
+  showEmployees(employees);
+  return 6;
+}
+
+int handleFilterProductsByType() {
+  if (products.empty()) {
+    cout << "No products to filter\n";
+    return 1;
+  }
+  string type;
+  cout << "Enter product type to filter: ";
+  cin >> type;
+  MyVector<Product> filtered = products.filter(
+      [&type](const Product &p) { return p.getType() == type; });
+  if (filtered.empty()) {
+    cout << "No products of type '" << type << "'\n";
+  } else {
+    cout << "Filtered products (type = " << type << "):\n";
+    for (size_t i = 0; i < filtered.getSize(); ++i) {
+      cout << i + 1 << ". " << filtered[i].getName() << " "
+           << filtered[i].getPrice() << " rub\n";
+    }
+  }
+  return 1;
+}
+
+int handleFilterSuppliersByProductName() {
+  if (suppliers.empty()) {
+    cout << "No suppliers to filter\n";
+    return 2;
+  }
+  string prodName;
+  cout << "Enter product name to filter suppliers: ";
+  cin >> prodName;
+  MyVector<Supplier> filtered =
+      suppliers.filter([&prodName](const Supplier &s) {
+        return s.getProduct() && s.getProduct()->getName() == prodName;
+      });
+  if (filtered.empty()) {
+    cout << "No suppliers for product '" << prodName << "'\n";
+  } else {
+    cout << "Filtered suppliers (product = " << prodName << "):\n";
+    for (size_t i = 0; i < filtered.getSize(); ++i) {
+      cout << i + 1 << ". " << filtered[i].getName() << " "
+           << filtered[i].getSurname() << "\n";
+    }
+  }
+  return 2;
+}
+
+int handleFilterEmployeesByJob() {
+  if (employees.empty()) {
+    cout << "No employees to filter\n";
+    return 3;
+  }
+  string job;
+  cout << "Enter job title to filter: ";
+  cin >> job;
+  MyVector<Employee> filtered =
+      employees.filter([&job](const Employee &e) { return e.getJob() == job; });
+  if (filtered.empty()) {
+    cout << "No employees with job '" << job << "'\n";
+  } else {
+    cout << "Filtered employees (job = " << job << "):\n";
+    for (size_t i = 0; i < filtered.getSize(); ++i) {
+      cout << i + 1 << ". " << filtered[i].getName() << " "
+           << filtered[i].getSurname() << ", age " << filtered[i].getAge()
+           << "\n";
+    }
+  }
+  return 3;
 }
 
 int handleAddProduct() {
@@ -185,13 +380,13 @@ int handleAddProduct() {
 
   products.push_back(Product(name, productType, price, amount));
   cout << "Product added\n";
-  return 0;
+  return 1;
 }
 
 int handleAddSupplier() {
   if (products.empty()) {
     cout << "Add product first\n";
-    return 0;
+    return 2;
   }
 
   showProducts(products);
@@ -201,9 +396,9 @@ int handleAddSupplier() {
   cin >> prodIndex;
   prodIndex--;
 
-  if (prodIndex < 0 || prodIndex >= static_cast<int>(products.size())) {
+  if (prodIndex < 0 || prodIndex >= static_cast<int>(products.getSize())) {
     cout << "Wrong product number\n";
-    return 0;
+    return 2;
   }
 
   string name, surname, login2, password2;
@@ -229,7 +424,7 @@ int handleAddSupplier() {
 
   cout << "Supplier added (linked to product " << products[prodIndex].getName()
        << ")\n";
-  return 0;
+  return 2;
 }
 
 int handleAddEmployee() {
@@ -257,7 +452,7 @@ int handleAddEmployee() {
   employees.push_back(Employee(name, surname, age, login2, password2, job));
 
   cout << "Employee added\n";
-  return 0;
+  return 3;
 }
 
 int handleEditProduct() {
@@ -268,9 +463,9 @@ int handleEditProduct() {
   cin >> index;
   index--;
 
-  if (index < 0 || index >= static_cast<int>(products.size())) {
+  if (index < 0 || index >= static_cast<int>(products.getSize())) {
     cout << "Wrong number\n";
-    return 0;
+    return 1;
   }
 
   string name, productType;
@@ -294,7 +489,7 @@ int handleEditProduct() {
   products[index].setAmount(amount);
 
   cout << "Updated\n";
-  return 0;
+  return 1;
 }
 
 int handleEditSupplier() {
@@ -305,9 +500,9 @@ int handleEditSupplier() {
   cin >> index;
   index--;
 
-  if (index < 0 || index >= static_cast<int>(suppliers.size())) {
+  if (index < 0 || index >= static_cast<int>(suppliers.getSize())) {
     cout << "Wrong number\n";
-    return 0;
+    return 2;
   }
 
   string productName;
@@ -323,7 +518,7 @@ int handleEditSupplier() {
   suppliers[index].setProductPrice(productPrice);
 
   cout << "Updated\n";
-  return 0;
+  return 2;
 }
 
 int handleEditEmployee() {
@@ -334,9 +529,9 @@ int handleEditEmployee() {
   cin >> index;
   index--;
 
-  if (index < 0 || index >= static_cast<int>(employees.size())) {
+  if (index < 0 || index >= static_cast<int>(employees.getSize())) {
     cout << "Wrong number\n";
-    return 0;
+    return 3;
   }
 
   string job;
@@ -347,7 +542,7 @@ int handleEditEmployee() {
   employees[index].setJob(job);
 
   cout << "Updated\n";
-  return 0;
+  return 3;
 }
 
 int handleDeleteProduct() {
@@ -358,18 +553,19 @@ int handleDeleteProduct() {
   cin >> index;
   index--;
 
-  if (index >= 0 && index < static_cast<int>(products.size())) {
-    Product *base = products.data();
-    vector<int> oldIdx(suppliers.size(), -1);
-    for (size_t i = 0; i < suppliers.size(); ++i) {
+  if (index >= 0 && index < static_cast<int>(products.getSize())) {
+    Product *base = products.getData();
+    MyVector<int> oldIdx;
+    for (size_t i = 0; i < suppliers.getSize(); ++i) {
       Product *p = suppliers[i].getProduct();
       if (p)
-        oldIdx[i] = static_cast<int>(p - base);
+        oldIdx.push_back(static_cast<int>(p - base));
+      else
+        oldIdx.push_back(-1);
     }
 
-    products.erase(products.begin() + index);
-
-    for (size_t i = 0; i < suppliers.size(); ++i) {
+    products.erase(index);
+    for (size_t i = 0; i < suppliers.getSize(); ++i) {
       int idx = oldIdx[i];
       if (idx < 0)
         continue;
@@ -381,7 +577,7 @@ int handleDeleteProduct() {
     }
     cout << "Deleted\n";
   }
-  return 0;
+  return 1;
 }
 
 int handleDeleteSupplier() {
@@ -392,11 +588,11 @@ int handleDeleteSupplier() {
   cin >> index;
   index--;
 
-  if (index >= 0 && index < static_cast<int>(suppliers.size())) {
-    suppliers.erase(suppliers.begin() + index);
+  if (index >= 0 && index < static_cast<int>(suppliers.getSize())) {
+    suppliers.erase(index);
     cout << "Deleted\n";
   }
-  return 0;
+  return 2;
 }
 
 int handleDeleteEmployee() {
@@ -407,37 +603,37 @@ int handleDeleteEmployee() {
   cin >> index;
   index--;
 
-  if (index >= 0 && index < static_cast<int>(employees.size())) {
-    employees.erase(employees.begin() + index);
+  if (index >= 0 && index < static_cast<int>(employees.getSize())) {
+    employees.erase(index);
     cout << "Deleted\n";
   }
-  return 0;
+  return 3;
 }
 
 int handleShowProducts() {
   showProducts(products);
-  return 0;
+  return 1;
 }
 
 int handleShowSuppliers() {
   showSuppliers(suppliers);
-  return 0;
+  return 2;
 }
 
 int handleShowEmployees() {
   showEmployees(employees);
-  return 0;
+  return 3;
 }
 
 int handleShowAllUsers() {
   showAllUsersPolymorphically(employees, suppliers);
-  return 0;
+  return 4;
 }
 
 int handleMergeProducts() {
-  if (products.size() < 2) {
+  if (products.getSize() < 2) {
     cout << "Need at least 2 products\n";
-    return 0;
+    return 5;
   }
 
   showProducts(products);
@@ -453,31 +649,33 @@ int handleMergeProducts() {
   first--;
   second--;
 
-  if (first < 0 || first >= static_cast<int>(products.size()) || second < 0 ||
-      second >= static_cast<int>(products.size())) {
+  if (first < 0 || first >= static_cast<int>(products.getSize()) ||
+      second < 0 || second >= static_cast<int>(products.getSize())) {
     cout << "Wrong numbers\n";
-    return 0;
+    return 5;
   }
 
   if (!(products[first] == products[second])) {
     cout << "Cannot sum different products\n";
-    return 0;
+    return 5;
   }
 
-  Product *base = products.data();
-  vector<int> oldIdx(suppliers.size(), -1);
-  for (size_t i = 0; i < suppliers.size(); ++i) {
+  Product *base = products.getData();
+  MyVector<int> oldIdx;
+  for (size_t i = 0; i < suppliers.getSize(); ++i) {
     Product *p = suppliers[i].getProduct();
     if (p)
-      oldIdx[i] = static_cast<int>(p - base);
+      oldIdx.push_back(static_cast<int>(p - base));
+    else
+      oldIdx.push_back(-1);
   }
 
   products[first] = products[first] + products[second];
-  products.erase(products.begin() + second);
+  products.erase(second);
 
   int newFirstIdx = (first > second) ? first - 1 : first;
 
-  for (size_t i = 0; i < suppliers.size(); ++i) {
+  for (size_t i = 0; i < suppliers.getSize(); ++i) {
     int idx = oldIdx[i];
     if (idx < 0)
       continue;
@@ -491,13 +689,13 @@ int handleMergeProducts() {
   cout << "Products merged successfully:\n";
   cout << products[newFirstIdx] << endl;
 
-  return 0;
+  return 5;
 }
 
 int handleRestockSupplier() {
   if (suppliers.empty()) {
     cout << "No suppliers available\n";
-    return 0;
+    return 6;
   }
 
   showSuppliers(suppliers);
@@ -508,14 +706,14 @@ int handleRestockSupplier() {
   cin >> supIndex;
   supIndex--;
 
-  if (supIndex < 0 || supIndex >= static_cast<int>(suppliers.size())) {
+  if (supIndex < 0 || supIndex >= static_cast<int>(suppliers.getSize())) {
     cout << "Wrong supplier number\n";
-    return 0;
+    return 6;
   }
 
   if (!suppliers[supIndex].getProduct()) {
     cout << "Supplier has no linked product\n";
-    return 0;
+    return 6;
   }
 
   cout << "Quantity to add: ";
@@ -525,65 +723,66 @@ int handleRestockSupplier() {
 
   cout << "Stock updated. Product now:\n";
   cout << *suppliers[supIndex].getProduct() << endl;
-  return 0;
+  return 6;
 }
 
-int handleLogout() { return 7; }
-
-int handleExit() { return 8; }
+int handleAdminLogout() { return 9; }
+int handleAdminExit() { return 10; }
+int handleUserLogout() { return 2; }
+int handleUserExit() { return 3; }
 
 int handleUserShow() {
   handleShowMenu();
-  return 0;
+  return 1;
 }
 
-void showProducts(vector<Product> &products) {
+void showProducts(MyVector<Product> &products) {
   if (products.empty()) {
     cout << "No products available\n";
     return;
   }
 
-  for (int i = 0; i < static_cast<int>(products.size()); i++) {
+  for (int i = 0; i < static_cast<int>(products.getSize()); i++) {
     cout << i + 1 << ". " << products[i].getName() << " "
          << products[i].getType() << " " << products[i].getPrice() << " "
          << products[i].getAmount() << endl;
   }
 }
 
-void showSuppliers(vector<Supplier> &suppliers) {
+void showSuppliers(MyVector<Supplier> &suppliers) {
   if (suppliers.empty()) {
     cout << "No suppliers available\n";
     return;
   }
 
-  for (int i = 0; i < static_cast<int>(suppliers.size()); i++) {
+  for (int i = 0; i < static_cast<int>(suppliers.getSize()); i++) {
     cout << i + 1 << ". ";
     suppliers[i].showInfo();
   }
 }
 
-void showEmployees(vector<Employee> &employees) {
+void showEmployees(MyVector<Employee> &employees) {
   if (employees.empty()) {
     cout << "No employees available\n";
     return;
   }
 
-  for (int i = 0; i < static_cast<int>(employees.size()); i++) {
+  for (int i = 0; i < static_cast<int>(employees.getSize()); i++) {
     cout << i + 1 << ". ";
     employees[i].showInfo();
   }
 }
 
-void showAllUsersPolymorphically(vector<Employee> &employees,
-                                 vector<Supplier> &suppliers) {
-  vector<User *> users;
+void showAllUsersPolymorphically(MyVector<Employee> &employees,
+                                 MyVector<Supplier> &suppliers) {
+  MyVector<User *> users;
 
-  for (auto &employee : employees) {
-    users.push_back(&employee);
+  for (size_t i = 0; i < employees.getSize(); i++) {
+    users.push_back(&employees[i]);
   }
 
-  for (auto &supplier : suppliers) {
-    users.push_back(&supplier);
+  for (size_t i = 0; i < suppliers.getSize(); i++) {
+    users.push_back(&suppliers[i]);
   }
 
   if (users.empty()) {
@@ -591,9 +790,9 @@ void showAllUsersPolymorphically(vector<Employee> &employees,
     return;
   }
 
-  for (auto item : users) {
-    item->showInfo();
-    item->performAction();
+  for (size_t i = 0; i < users.getSize(); i++) {
+    users[i]->showInfo();
+    users[i]->performAction();
     cout << endl;
   }
 }
