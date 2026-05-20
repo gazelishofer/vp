@@ -1,66 +1,67 @@
+#ifndef LR2_SUPPLIER_H
+#define LR2_SUPPLIER_H
 
-#ifndef LR2_CLASS1_H
-#define LR2_CLASS1_H
-#include "../Product/Product.h"
 #include "../User/User.h"
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+// Forward declaration
+template <typename T> class MyVector;
+class Product;
 
 class Supplier : public User {
-
 private:
-  Product *product;
+  int productIndex;
 
 public:
-  Supplier(string n, string s, int a, string l, string p, Product *pr)
-      : User(n, s, a, l, p), product(pr) {}
+  Supplier(string n, string s, int a, string l, string p, int prodIndex)
+      : User(n, s, a, l, p), productIndex(prodIndex) {}
 
-  void showInfo() override;
+  Supplier(const Supplier &other) : User(other) {
+    productIndex = other.productIndex;
+  }
+
+  Supplier &operator=(const Supplier &other) {
+    if (this != &other) {
+      User::operator=(other);
+      productIndex = other.productIndex;
+    }
+    return *this;
+  }
+
+  IEntity *copy() const override { return new Supplier(*this); }
+
+  void assign(const IEntity &other) override {
+    const Supplier *s = dynamic_cast<const Supplier *>(&other);
+    if (s) {
+      User::assign(*s);
+      productIndex = s->productIndex;
+    }
+  }
+
+  void destroy() override { delete this; }
+
+  void showInfo() const override;
   void performAction() override;
 
-  Supplier &operator+=(int qty) {
-    if (product) {
-      product->setAmount(product->getAmount() + qty);
-    }
-    return *this;
+  bool isEqual(const IEntity &other) const override {
+    const Supplier *s = dynamic_cast<const Supplier *>(&other);
+    if (!s)
+      return false;
+    return login == s->login;
   }
 
-  Supplier operator+(int qty) {
-    if (product) {
-      product->setAmount(product->getAmount() + qty);
-    }
-    return *this;
-  }
+  int getProductIndex() const { return productIndex; }
+  void setProductIndex(int index) { productIndex = index; }
 
-  Product *getProduct() const { return product; }
+  void setProductName(string newName);
+  void setProductPrice(int newPrice);
+  class Product *getProduct() const;
 
-  void setProduct(Product *pr) { product = pr; }
-
-  void setProductName(string n) {
-    if (product)
-      product->setName(n);
-  }
-
-  void setProductType(string t) {
-    if (product)
-      product->setType(t);
-  }
-
-  void setProductPrice(int p) {
-    if (product)
-      product->setPrice(p);
-  }
-
-  void setProductAmount(int a) {
-    if (product)
-      product->setAmount(a);
-  }
-
-  string getProductName() { return product ? product->getName() : ""; }
-
-  string getProductType() { return product ? product->getType() : ""; }
-
-  int getProductPrice() { return product ? product->getPrice() : 0; }
-
-  int getProductAmount() { return product ? product->getAmount() : 0; }
+  Supplier operator+(int qty) const;
+  Supplier &operator+=(int qty);
 };
 
-#endif // LR2_CLASS1_H
+#endif

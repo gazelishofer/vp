@@ -10,13 +10,14 @@ esac
 
 g++ -std=c++14 -o "$BIN" \
     main.cpp \
-    ./menu/CMenu.cpp \
-    ./menu/CMenuItem.cpp \
+    menu/CMenu.cpp \
+    menu/CMenuItem.cpp \
     ../Models/Employee/Employee.cpp \
     ../Models/Product/Product.cpp \
     ../Models/Supplier/Supplier.cpp \
-    ../Models/User/User.cpp
+    ../Models/User/User.cpp \
+    -I. -I../Models
 
-echo "Скомпилировано: $BIN"
-echo "Today is $(date). Запускаю $BIN..."
+echo "Compiled: $BIN"
+echo "Running $BIN..."
 "./$BIN"

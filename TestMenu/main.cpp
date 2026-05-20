@@ -420,7 +420,7 @@ int handleAddSupplier() {
   cin >> password2;
 
   suppliers.push_back(
-      Supplier(name, surname, age, login2, password2, &products[prodIndex]));
+      Supplier(name, surname, age, login2, password2, prodIndex));
 
   cout << "Supplier added (linked to product " << products[prodIndex].getName()
        << ")\n";
@@ -554,27 +554,17 @@ int handleDeleteProduct() {
   index--;
 
   if (index >= 0 && index < static_cast<int>(products.getSize())) {
-    Product *base = products.getData();
-    MyVector<int> oldIdx;
+
     for (size_t i = 0; i < suppliers.getSize(); ++i) {
-      Product *p = suppliers[i].getProduct();
-      if (p)
-        oldIdx.push_back(static_cast<int>(p - base));
-      else
-        oldIdx.push_back(-1);
+      int prodIndex = suppliers[i].getProductIndex();
+      if (prodIndex == index) {
+        suppliers[i].setProductIndex(-1);
+      } else if (prodIndex > index) {
+        suppliers[i].setProductIndex(prodIndex - 1);
+      }
     }
 
     products.erase(index);
-    for (size_t i = 0; i < suppliers.getSize(); ++i) {
-      int idx = oldIdx[i];
-      if (idx < 0)
-        continue;
-      if (idx == index) {
-        suppliers[i].setProduct(nullptr);
-      } else if (idx > index) {
-        suppliers[i].setProduct(&products[idx - 1]);
-      }
-    }
     cout << "Deleted\n";
   }
   return 1;
@@ -660,34 +650,27 @@ int handleMergeProducts() {
     return 5;
   }
 
-  Product *base = products.getData();
-  MyVector<int> oldIdx;
-  for (size_t i = 0; i < suppliers.getSize(); ++i) {
-    Product *p = suppliers[i].getProduct();
-    if (p)
-      oldIdx.push_back(static_cast<int>(p - base));
-    else
-      oldIdx.push_back(-1);
+  int keepIndex = first;
+  int removeIndex = second;
+  if (keepIndex > removeIndex) {
+    keepIndex = second;
+    removeIndex = first;
   }
 
-  products[first] = products[first] + products[second];
-  products.erase(second);
-
-  int newFirstIdx = (first > second) ? first - 1 : first;
-
   for (size_t i = 0; i < suppliers.getSize(); ++i) {
-    int idx = oldIdx[i];
-    if (idx < 0)
-      continue;
-    if (idx == second) {
-      suppliers[i].setProduct(&products[newFirstIdx]);
-    } else if (idx > second) {
-      suppliers[i].setProduct(&products[idx - 1]);
+    int prodIndex = suppliers[i].getProductIndex();
+    if (prodIndex == removeIndex) {
+      suppliers[i].setProductIndex(keepIndex);
+    } else if (prodIndex > removeIndex) {
+      suppliers[i].setProductIndex(prodIndex - 1);
     }
   }
 
+  products[keepIndex] = products[keepIndex] + products[removeIndex];
+  products.erase(removeIndex);
+
   cout << "Products merged successfully:\n";
-  cout << products[newFirstIdx] << endl;
+  cout << products[keepIndex] << endl;
 
   return 5;
 }
@@ -719,7 +702,7 @@ int handleRestockSupplier() {
   cout << "Quantity to add: ";
   cin >> qty;
 
-  suppliers[supIndex] = suppliers[supIndex] + qty;
+  suppliers[supIndex] += qty;
 
   cout << "Stock updated. Product now:\n";
   cout << *suppliers[supIndex].getProduct() << endl;
@@ -742,7 +725,7 @@ void showProducts(MyVector<Product> &products) {
     return;
   }
 
-  for (int i = 0; i < static_cast<int>(products.getSize()); i++) {
+  for (size_t i = 0; i < products.getSize(); i++) {
     cout << i + 1 << ". " << products[i].getName() << " "
          << products[i].getType() << " " << products[i].getPrice() << " "
          << products[i].getAmount() << endl;
@@ -755,9 +738,10 @@ void showSuppliers(MyVector<Supplier> &suppliers) {
     return;
   }
 
-  for (int i = 0; i < static_cast<int>(suppliers.getSize()); i++) {
+  for (size_t i = 0; i < suppliers.getSize(); i++) {
     cout << i + 1 << ". ";
     suppliers[i].showInfo();
+    cout << endl;
   }
 }
 
@@ -767,32 +751,33 @@ void showEmployees(MyVector<Employee> &employees) {
     return;
   }
 
-  for (int i = 0; i < static_cast<int>(employees.getSize()); i++) {
+  for (size_t i = 0; i < employees.getSize(); i++) {
     cout << i + 1 << ". ";
     employees[i].showInfo();
+    cout << endl;
   }
 }
 
 void showAllUsersPolymorphically(MyVector<Employee> &employees,
                                  MyVector<Supplier> &suppliers) {
-  MyVector<User *> users;
-
-  for (size_t i = 0; i < employees.getSize(); i++) {
-    users.push_back(&employees[i]);
-  }
-
-  for (size_t i = 0; i < suppliers.getSize(); i++) {
-    users.push_back(&suppliers[i]);
-  }
-
-  if (users.empty()) {
+  if (employees.empty() && suppliers.empty()) {
     cout << "No users available\n";
     return;
   }
 
-  for (size_t i = 0; i < users.getSize(); i++) {
-    users[i]->showInfo();
-    users[i]->performAction();
+  cout << "========== EMPLOYEES ==========\n";
+  for (size_t i = 0; i < employees.getSize(); i++) {
+    cout << "--- Employee " << i + 1 << " ---" << endl;
+    employees[i].showInfo();
+    employees[i].performAction();
+    cout << endl;
+  }
+
+  cout << "========== SUPPLIERS ==========\n";
+  for (size_t i = 0; i < suppliers.getSize(); i++) {
+    cout << "--- Supplier " << i + 1 << " ---" << endl;
+    suppliers[i].showInfo();
+    suppliers[i].performAction();
     cout << endl;
   }
 }
