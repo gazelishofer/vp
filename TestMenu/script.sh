@@ -16,6 +16,8 @@ g++ -std=c++14 -o "$BIN" \
     ../Models/Product/Product.cpp \
     ../Models/Supplier/Supplier.cpp \
     ../Models/User/User.cpp \
+    ../Models/Production/Production.cpp \
+    ../Models/Sale/Sale.cpp \
     -I. -I../Models
 
 echo "Compiled: $BIN"

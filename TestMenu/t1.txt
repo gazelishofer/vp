@@ -1,0 +1,11 @@
+=== PRODUCTS ===
+Potato|Veg|25|12
+Carrot|Veg|36|37
+=== EMPLOYEES ===
+John|White|28|john|j|Engineer
+Carl|Marx|46|carl|c|Manager
+=== SUPPLIERS ===
+=== PRODUCTIONS ===
+Potato|12|2026-03-11
+Carrot|37|2021-02-14
+=== SALES ===
