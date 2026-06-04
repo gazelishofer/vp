@@ -68,6 +68,18 @@ bool isOnlyLetters(const string &str) {
   return true;
 }
 
+int safeStoi(const string &str) {
+  try {
+    size_t pos;
+    int val = stoi(str, &pos);
+    if (pos != str.length())
+      throw invalid_argument("Trailing characters");
+    return val;
+  } catch (const exception &e) {
+    throw runtime_error("Invalid number in file: " + str);
+  }
+}
+
 void showProducts(MyVector<Product> &products);
 void showSuppliers(MyVector<Supplier> &suppliers);
 void showEmployees(MyVector<Employee> &employees);
@@ -995,8 +1007,7 @@ int handleAddProduction() {
     showProducts(products);
     int prodIndex;
     cout << "Choose product number: ";
-    cin >> prodIndex;
-    if (cin.fail()) {
+    if (!(cin >> prodIndex)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1007,8 +1018,7 @@ int handleAddProduction() {
     showEmployees(employees);
     int empIndex;
     cout << "Choose employee number: ";
-    cin >> empIndex;
-    if (cin.fail()) {
+    if (!(cin >> empIndex)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1019,8 +1029,7 @@ int handleAddProduction() {
     int quantity;
     string date;
     cout << "Quantity produced: ";
-    cin >> quantity;
-    if (cin.fail()) {
+    if (!(cin >> quantity)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Quantity must be a number.");
@@ -1038,8 +1047,6 @@ int handleAddProduction() {
     cout << "Production added successfully!\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   } catch (const invalid_argument &e) {
@@ -1057,8 +1064,7 @@ int handleAddSale() {
     showProducts(products);
     int prodIndex;
     cout << "Choose product number: ";
-    cin >> prodIndex;
-    if (cin.fail()) {
+    if (!(cin >> prodIndex)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1069,8 +1075,7 @@ int handleAddSale() {
     showSuppliers(suppliers);
     int supIndex;
     cout << "Choose supplier number: ";
-    cin >> supIndex;
-    if (cin.fail()) {
+    if (!(cin >> supIndex)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1082,8 +1087,7 @@ int handleAddSale() {
     string date;
     string buyer;
     cout << "Quantity sold: ";
-    cin >> quantity;
-    if (cin.fail()) {
+    if (!(cin >> quantity)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Quantity must be a number.");
@@ -1116,8 +1120,6 @@ int handleAddSale() {
     cout << "Supplier: " << supplierFullName << endl;
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   } catch (const invalid_argument &e) {
@@ -1259,8 +1261,8 @@ void loadFromFile(const string &filename) {
             pos3 != string::npos) {
           string name = line.substr(0, pos1);
           string type = line.substr(pos1 + 1, pos2 - pos1 - 1);
-          int price = stoi(line.substr(pos2 + 1, pos3 - pos2 - 1));
-          int amount = stoi(line.substr(pos3 + 1));
+          int price = safeStoi(line.substr(pos2 + 1, pos3 - pos2 - 1));
+          int amount = safeStoi(line.substr(pos3 + 1));
           products.push_back(Product(name, type, price, amount));
         }
       } else if (section == "EMPLOYEES") {
@@ -1274,7 +1276,7 @@ void loadFromFile(const string &filename) {
             pos5 != string::npos) {
           string name = line.substr(0, pos1);
           string surname = line.substr(pos1 + 1, pos2 - pos1 - 1);
-          int age = stoi(line.substr(pos2 + 1, pos3 - pos2 - 1));
+          int age = safeStoi(line.substr(pos2 + 1, pos3 - pos2 - 1));
           string login = line.substr(pos3 + 1, pos4 - pos3 - 1);
           string password = line.substr(pos4 + 1, pos5 - pos4 - 1);
           string job = line.substr(pos5 + 1);
@@ -1292,10 +1294,10 @@ void loadFromFile(const string &filename) {
             pos5 != string::npos) {
           string name = line.substr(0, pos1);
           string surname = line.substr(pos1 + 1, pos2 - pos1 - 1);
-          int age = stoi(line.substr(pos2 + 1, pos3 - pos2 - 1));
+          int age = safeStoi(line.substr(pos2 + 1, pos3 - pos2 - 1));
           string login = line.substr(pos3 + 1, pos4 - pos3 - 1);
           string password = line.substr(pos4 + 1, pos5 - pos4 - 1);
-          int prodIndex = stoi(line.substr(pos5 + 1));
+          int prodIndex = safeStoi(line.substr(pos5 + 1));
           suppliers.push_back(
               Supplier(name, surname, age, login, password, prodIndex));
         }
@@ -1304,7 +1306,7 @@ void loadFromFile(const string &filename) {
         size_t pos2 = line.find('|', pos1 + 1);
         if (pos1 != string::npos && pos2 != string::npos) {
           string productName = line.substr(0, pos1);
-          int quantity = stoi(line.substr(pos1 + 1, pos2 - pos1 - 1));
+          int quantity = safeStoi(line.substr(pos1 + 1, pos2 - pos1 - 1));
           string date = line.substr(pos2 + 1);
           for (size_t i = 0; i < products.getSize(); i++) {
             if (products[i].getName() == productName) {
@@ -1324,9 +1326,9 @@ void loadFromFile(const string &filename) {
             pos3 != string::npos && pos4 != string::npos &&
             pos5 != string::npos) {
           string productName = line.substr(0, pos1);
-          int quantity = stoi(line.substr(pos1 + 1, pos2 - pos1 - 1));
+          int quantity = safeStoi(line.substr(pos1 + 1, pos2 - pos1 - 1));
           string date = line.substr(pos2 + 1, pos3 - pos2 - 1);
-          int totalPrice = stoi(line.substr(pos3 + 1, pos4 - pos3 - 1));
+          int totalPrice = safeStoi(line.substr(pos3 + 1, pos4 - pos3 - 1));
           string buyer = line.substr(pos4 + 1, pos5 - pos4 - 1);
           string supplierName = line.substr(pos5 + 1);
           for (size_t i = 0; i < products.getSize(); i++) {
@@ -1508,8 +1510,7 @@ int handleAddProduct() {
     if (productType.empty())
       throw invalid_argument("Product type cannot be empty!");
     cout << "Price: ";
-    cin >> price;
-    if (cin.fail()) {
+    if (!(cin >> price)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Price must be a number.");
@@ -1521,8 +1522,6 @@ int handleAddProduct() {
             "supplier' to add stock.\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const invalid_argument &e) {
     cerr << "Error: " << e.what() << endl;
   }
@@ -1536,8 +1535,7 @@ int handleAddSupplier() {
     showProducts(products);
     int prodIndex;
     cout << "Choose product number for this supplier: ";
-    cin >> prodIndex;
-    if (cin.fail()) {
+    if (!(cin >> prodIndex)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1562,8 +1560,7 @@ int handleAddSupplier() {
       throw invalid_argument(
           "Surname must contain only letters, spaces, and hyphens!");
     cout << "Age: ";
-    cin >> age;
-    if (cin.fail()) {
+    if (!(cin >> age)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Age must be a number.");
@@ -1584,8 +1581,6 @@ int handleAddSupplier() {
          << products[prodIndex].getName() << ")\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   } catch (const invalid_argument &e) {
@@ -1613,8 +1608,7 @@ int handleAddEmployee() {
       throw invalid_argument(
           "Surname must contain only letters, spaces, and hyphens!");
     cout << "Age: ";
-    cin >> age;
-    if (cin.fail()) {
+    if (!(cin >> age)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Age must be a number.");
@@ -1640,8 +1634,6 @@ int handleAddEmployee() {
     cout << "Employee added\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const invalid_argument &e) {
     cerr << "Error: " << e.what() << endl;
   }
@@ -1655,8 +1647,7 @@ int handleEditProduct() {
     showProducts(products);
     int index;
     cout << "Choose product number: ";
-    cin >> index;
-    if (cin.fail()) {
+    if (!(cin >> index)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1675,8 +1666,7 @@ int handleEditProduct() {
     if (productType.empty())
       throw invalid_argument("Type cannot be empty!");
     cout << "New price: ";
-    cin >> price;
-    if (cin.fail()) {
+    if (!(cin >> price)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Price must be a number.");
@@ -1690,8 +1680,6 @@ int handleEditProduct() {
          << products[index].getAmount() << ")\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   } catch (const invalid_argument &e) {
@@ -1707,8 +1695,7 @@ int handleEditSupplier() {
     showSuppliers(suppliers);
     int index;
     cout << "Choose supplier number: ";
-    cin >> index;
-    if (cin.fail()) {
+    if (!(cin >> index)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1733,8 +1720,7 @@ int handleEditSupplier() {
       throw invalid_argument(
           "Surname must contain only letters, spaces, and hyphens!");
     cout << "New age: ";
-    cin >> age;
-    if (cin.fail()) {
+    if (!(cin >> age)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Age must be a number.");
@@ -1757,8 +1743,6 @@ int handleEditSupplier() {
     cout << "Supplier updated (linked product remains the same)\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   } catch (const invalid_argument &e) {
@@ -1774,8 +1758,7 @@ int handleEditEmployee() {
     showEmployees(employees);
     int index;
     cout << "Choose employee number: ";
-    cin >> index;
-    if (cin.fail()) {
+    if (!(cin >> index)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1800,8 +1783,7 @@ int handleEditEmployee() {
       throw invalid_argument(
           "Surname must contain only letters, spaces, and hyphens!");
     cout << "New age: ";
-    cin >> age;
-    if (cin.fail()) {
+    if (!(cin >> age)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Age must be a number.");
@@ -1832,8 +1814,6 @@ int handleEditEmployee() {
     cout << "Employee updated\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   } catch (const invalid_argument &e) {
@@ -1849,8 +1829,7 @@ int handleDeleteProduct() {
     showProducts(products);
     int index;
     cout << "Choose product number: ";
-    cin >> index;
-    if (cin.fail()) {
+    if (!(cin >> index)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1869,8 +1848,6 @@ int handleDeleteProduct() {
     cout << "Deleted\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   }
@@ -1884,8 +1861,7 @@ int handleDeleteSupplier() {
     showSuppliers(suppliers);
     int index;
     cout << "Choose supplier number: ";
-    cin >> index;
-    if (cin.fail()) {
+    if (!(cin >> index)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1897,8 +1873,6 @@ int handleDeleteSupplier() {
     cout << "Deleted\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   }
@@ -1912,8 +1886,7 @@ int handleDeleteEmployee() {
     showEmployees(employees);
     int index;
     cout << "Choose employee number: ";
-    cin >> index;
-    if (cin.fail()) {
+    if (!(cin >> index)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1925,8 +1898,6 @@ int handleDeleteEmployee() {
     cout << "Deleted\n";
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   }
@@ -1960,15 +1931,13 @@ int handleMergeProducts() {
     showProducts(products);
     int first, second;
     cout << "Choose first product number: ";
-    cin >> first;
-    if (cin.fail()) {
+    if (!(cin >> first)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
     }
     cout << "Choose second product number: ";
-    cin >> second;
-    if (cin.fail()) {
+    if (!(cin >> second)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -1999,8 +1968,6 @@ int handleMergeProducts() {
     cout << products[keepIndex] << endl;
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   } catch (const logic_error &e) {
@@ -2016,8 +1983,7 @@ int handleRestockSupplier() {
     showSuppliers(suppliers);
     int supIndex;
     cout << "Choose supplier number: ";
-    cin >> supIndex;
-    if (cin.fail()) {
+    if (!(cin >> supIndex)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Please enter a number.");
@@ -2029,8 +1995,7 @@ int handleRestockSupplier() {
       throw runtime_error("Supplier has no linked product!");
     int qty;
     cout << "Quantity to add: ";
-    cin >> qty;
-    if (cin.fail()) {
+    if (!(cin >> qty)) {
       cin.clear();
       cin.ignore(numeric_limits<streamsize>::max(), '\n');
       throw runtime_error("Invalid input! Quantity must be a number.");
@@ -2042,8 +2007,6 @@ int handleRestockSupplier() {
     cout << *suppliers[supIndex].getProduct() << endl;
   } catch (const runtime_error &e) {
     cerr << "Error: " << e.what() << endl;
-    cin.clear();
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
   } catch (const out_of_range &e) {
     cerr << "Error: " << e.what() << endl;
   } catch (const invalid_argument &e) {
